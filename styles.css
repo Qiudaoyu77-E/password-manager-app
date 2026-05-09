@@ -240,6 +240,12 @@ textarea:focus {
   color: var(--accent);
 }
 
+.lock-note {
+  margin: -6px 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .entry-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
