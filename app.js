@@ -1,6 +1,7 @@
 const STORAGE_KEY = "local-password-vault-v1";
 const SYNC_KEY = "local-password-vault-sync-v1";
 const ITERATIONS = 250000;
+const AUTO_LOCK_MS = 3 * 60 * 1000;
 
 const state = {
   key: null,
@@ -8,6 +9,7 @@ const state = {
   entries: [],
   vaultExists: Boolean(localStorage.getItem(STORAGE_KEY)),
   sync: loadSyncConfig(),
+  autoLockTimer: null,
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -110,6 +112,32 @@ function showToast(message) {
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(() => toast.classList.add("hidden"), 2200);
 }
+
+function lockVault(message = "") {
+  clearTimeout(state.autoLockTimer);
+  state.autoLockTimer = null;
+  state.key = null;
+  state.entries = [];
+  vaultView.classList.add("hidden");
+  lockedView.classList.remove("hidden");
+  if (entryDialog.open) entryDialog.close();
+  if (generatorDialog.open) generatorDialog.close();
+  if (syncDialog.open) syncDialog.close();
+  configureAuth();
+  authMessage.textContent = message;
+}
+
+function resetAutoLockTimer() {
+  if (!state.key || vaultView.classList.contains("hidden")) return;
+  clearTimeout(state.autoLockTimer);
+  state.autoLockTimer = setTimeout(() => {
+    lockVault("已超过 3 分钟未操作，请重新输入主密码。");
+  }, AUTO_LOCK_MS);
+}
+
+["click", "keydown", "mousemove", "touchstart", "scroll"].forEach((eventName) => {
+  document.addEventListener(eventName, resetAutoLockTimer, { passive: true });
+});
 
 async function copyText(text, label) {
   try {
@@ -337,6 +365,7 @@ $("#unlockForm").addEventListener("submit", async (event) => {
     lockedView.classList.add("hidden");
     vaultView.classList.remove("hidden");
     renderEntries();
+    resetAutoLockTimer();
   } catch {
     authMessage.textContent = "主密码不正确，或金库数据已损坏。";
   }
@@ -352,13 +381,7 @@ $("#resetVaultBtn").addEventListener("click", () => {
   showToast("已清空本地金库");
 });
 
-$("#lockBtn").addEventListener("click", () => {
-  state.key = null;
-  state.entries = [];
-  vaultView.classList.add("hidden");
-  lockedView.classList.remove("hidden");
-  configureAuth();
-});
+$("#lockBtn").addEventListener("click", () => lockVault());
 
 $("#addEntryBtn").addEventListener("click", () => openEntryDialog());
 $("#emptyAddBtn").addEventListener("click", () => openEntryDialog());
