@@ -1,0 +1,9 @@
+{
+  "name": "本地密码管理工具",
+  "short_name": "密码库",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f4ef",
+  "theme_color": "#0b7769",
+  "icons": []
+}
